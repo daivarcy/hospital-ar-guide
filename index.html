@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>人間ドックご案内</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+
+  <!-- MindAR + Three.js (iPhone Safari 対応) -->
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"></script>
+
+  <style>
+    :root {
+      --bg:       #0a0f1e;
+      --accent:   #00d4ff;
+      --accent2:  #0066ff;
+      --green:    #00e5a0;
+      --yellow:   #ffd166;
+      --text:     #e8edf5;
+      --text-dim: #7a8aa0;
+      --glass:    rgba(10, 15, 30, 0.85);
+      --border:   rgba(0, 212, 255, 0.25);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ===== SCREENS ===== */
+    .screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      transition: opacity 0.4s, transform 0.4s;
+    }
+
+    .screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(20px);
+    }
+
+    /* ========================================
+       SCREEN 1: 受診番号入力
+    ======================================== */
+    #screenLogin {
+      background: radial-gradient(ellipse at 50% 0%, rgba(0,102,255,0.2) 0%, var(--bg) 70%);
+    }
+
+    .login-logo {
+      font-size: 48px;
+      margin-bottom: 16px;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .login-title {
+      font-size: 24px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 6px;
+      letter-spacing: 0.04em;
+    }
+
+    .login-sub {
+      font-size: 13px;
+      color: var(--text-dim);
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .login-card {
+      background: rgba(17, 24, 39, 0.9);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px 28px;
+      width: 100%;
+      max-width: 360px;
+      backdrop-filter: blur(20px);
+    }
+
+    .input-label {
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+
+    .num-input {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(0,212,255,0.3);
+      border-radius: 12px;
+      padding: 16px 20px;
+      color: var(--text);
+      font-size: 28px;
+      font-family: 'DM Mono', monospace;
+      text-align: center;
+      letter-spacing: 0.1em;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      margin-bottom: 20px;
+    }
+
+    .num-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,212,255,0.15);
+    }
+
+    .num-input::placeholder {
+      color: rgba(122,138,160,0.5);
+      font-size: 18px;
+    }
+
+    .btn-start {
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border: none;
+      border-radius: 12px;
+      padding: 16px;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: 'Noto Sans JP', sans-serif;
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .btn-start:active { transform: scale(0.98); opacity: 0.9; }
+
+    .error-msg {
+      color: #ff6b6b;
+      font-size: 13px;
+      text-align: center;
+      margin-top: 12px;
+      min-height: 20px;
+    }
+
+    /* ========================================
+       SCREEN 2: 次案内先表示
+    ======================================== */
+    #screenGuide {
+      background: radial-gradient(ellipse at 50% 0%, rgba(0,102,255,0.2) 0%, var(--bg) 70%);
+      justify-content: flex-start;
+      padding-top: 60px;
+    }
+
+    .guide-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .guide-patient-num {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      margin-bottom: 6px;
+    }
+
+    .guide-patient-name {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .guide-greeting {
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    /* Next destination card */
+    .dest-card {
+      background: rgba(17, 24, 39, 0.9);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dest-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+    }
+
+    .dest-label {
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+    }
+
+    .dest-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .dest-name {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .dest-hint {
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    /* AR prompt */
+    .ar-prompt {
+      background: rgba(0, 212, 255, 0.08);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 24px;
+      text-align: center;
+      width: 100%;
+      max-width: 360px;
+      margin-bottom: 24px;
+    }
+
+    .ar-prompt-icon {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .ar-prompt-text {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .ar-prompt-sub {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .btn-start-ar {
+      width: 100%;
+      max-width: 360px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border: none;
+      border-radius: 12px;
+      padding: 16px;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: 'Noto Sans JP', sans-serif;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .btn-start-ar:active { transform: scale(0.98); opacity: 0.9; }
+
+    .btn-change-num {
+      margin-top: 16px;
+      background: none;
+      border: 1px solid rgba(122,138,160,0.3);
+      border-radius: 10px;
+      padding: 12px 24px;
+      color: var(--text-dim);
+      font-size: 14px;
+      font-family: 'Noto Sans JP', sans-serif;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .btn-change-num:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ========================================
+       SCREEN 3: AR カメラ
+    ======================================== */
+    #screenAR {
+      padding: 0;
+      background: #000;
+    }
+
+    /* MindAR container */
+    #mindar-container {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    /* AR Overlay UI */
+    .ar-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    /* Top bar */
+    .ar-topbar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      padding: 44px 20px 16px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: auto;
+    }
+
+    .ar-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .ar-patient-badge {
+      background: rgba(0, 212, 255, 0.2);
+      border: 1px solid var(--accent);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-family: 'DM Mono', monospace;
+      color: var(--accent);
+    }
+
+    /* Scan frame */
+    .scan-frame {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -55%);
+      width: 240px;
+      height: 240px;
+    }
+
+    .scan-corner {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-color: var(--accent);
+      border-style: solid;
+    }
+
+    .scan-corner.tl { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+    .scan-corner.tr { top: 0; right: 0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+    .scan-corner.bl { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+    .scan-corner.br { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+    .scan-line {
+      position: absolute;
+      left: 4px; right: 4px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      animation: scan 2s ease-in-out infinite;
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    @keyframes scan {
+      0% { top: 4px; }
+      100% { top: calc(100% - 6px); }
+    }
+
+    /* Scan prompt */
+    .scan-prompt {
+      position: absolute;
+      bottom: 30%;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      color: rgba(255,255,255,0.8);
+      width: 100%;
+      padding: 0 20px;
+    }
+
+    .scan-prompt-text {
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .scan-prompt-sub {
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+    }
+
+    /* AR Result Panel (shown when marker detected) */
+    .ar-result {
+      position: absolute;
+      bottom: 0;
+      left: 0; right: 0;
+      background: var(--glass);
+      border-top: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 24px 24px 40px;
+      transform: translateY(100%);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: auto;
+    }
+
+    .ar-result.visible {
+      transform: translateY(0);
+    }
+
+    .ar-result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .ar-result-marker {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+    }
+
+    .ar-result-dest {
+      font-size: 11px;
+      color: var(--accent);
+      font-family: 'DM Mono', monospace;
+    }
+
+    .ar-direction {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: rgba(0,212,255,0.08);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+    }
+
+    .ar-arrow {
+      font-size: 60px;
+      line-height: 1;
+      transition: transform 0.3s;
+      filter: drop-shadow(0 0 12px var(--accent));
+    }
+
+    .ar-direction-info {
+      flex: 1;
+    }
+
+    .ar-direction-label {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: var(--accent);
+    }
+
+    .ar-direction-guide {
+      font-size: 14px;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    .ar-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-rescan {
+      flex: 1;
+      background: rgba(0,212,255,0.15);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'Noto Sans JP', sans-serif;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-rescan:active { background: rgba(0,212,255,0.25); }
+
+    .btn-back-guide {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 14px;
+      color: var(--text-dim);
+      font-size: 14px;
+      font-family: 'Noto Sans JP', sans-serif;
+      cursor: pointer;
+    }
+
+    /* No marker found state */
+    .ar-no-marker {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: var(--glass);
+      border-top: 1px solid rgba(255,209,102,0.3);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 20px 24px 40px;
+      transform: translateY(100%);
+      transition: transform 0.3s;
+      pointer-events: auto;
+      text-align: center;
+    }
+
+    .ar-no-marker.visible {
+      transform: translateY(0);
+    }
+
+    .ar-no-marker-icon { font-size: 32px; margin-bottom: 8px; }
+    .ar-no-marker-text { font-size: 14px; color: var(--yellow); margin-bottom: 4px; }
+    .ar-no-marker-sub { font-size: 12px; color: var(--text-dim); }
+
+    /* ========================================
+       SCREEN 4: デモ用マーカー選択（AR代替）
+    ======================================== */
+    #screenMarkerDemo {
+      background: var(--bg);
+      justify-content: flex-start;
+      padding-top: 60px;
+      overflow-y: auto;
+    }
+
+    .demo-header {
+      text-align: center;
+      margin-bottom: 24px;
+      width: 100%;
+    }
+
+    .demo-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .demo-sub {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .marker-list {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .marker-card {
+      background: rgba(17, 24, 39, 0.9);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .marker-card:active {
+      transform: scale(0.98);
+      border-color: var(--accent);
+      background: rgba(0,212,255,0.08);
+    }
+
+    .marker-card-icon {
+      font-size: 28px;
+      width: 48px;
+      height: 48px;
+      background: rgba(0,212,255,0.1);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .marker-card-info { flex: 1; }
+
+    .marker-card-id {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      margin-bottom: 2px;
+    }
+
+    .marker-card-name {
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .marker-card-arrow {
+      color: var(--text-dim);
+      font-size: 18px;
+    }
+
+    .btn-back-to-guide {
+      margin-top: 20px;
+      background: none;
+      border: 1px solid rgba(122,138,160,0.3);
+      border-radius: 10px;
+      padding: 12px 24px;
+      color: var(--text-dim);
+      font-size: 14px;
+      font-family: 'Noto Sans JP', sans-serif;
+      cursor: pointer;
+    }
+
+    /* ========================================
+       SCREEN 5: AR Result（マーカー選択後）
+    ======================================== */
+    #screenResult {
+      background: radial-gradient(ellipse at 50% 0%, rgba(0,102,255,0.15) 0%, var(--bg) 70%);
+      justify-content: flex-start;
+      padding-top: 60px;
+    }
+
+    .result-header {
+      text-align: center;
+      margin-bottom: 28px;
+      width: 100%;
+    }
+
+    .result-marker-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+    }
+
+    .result-marker-name {
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    /* Big direction display */
+    .result-direction-card {
+      background: rgba(17, 24, 39, 0.9);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .result-direction-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+    }
+
+    .result-arrow {
+      font-size: 80px;
+      line-height: 1;
+      margin-bottom: 16px;
+      display: block;
+      filter: drop-shadow(0 0 20px var(--accent));
+      animation: arrowPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes arrowPulse {
+      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 16px var(--accent)); }
+      50% { transform: scale(1.05); filter: drop-shadow(0 0 28px var(--accent)); }
+    }
+
+    .result-dest-name {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .result-guide-label {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .result-direction-word {
+      display: inline-block;
+      background: rgba(0,212,255,0.15);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 16px;
+      font-size: 13px;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .result-floor {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .result-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .btn-rescan-result {
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border: none;
+      border-radius: 12px;
+      padding: 16px;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: 'Noto Sans JP', sans-serif;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn-to-guide {
+      width: 100%;
+      background: none;
+      border: 1px solid rgba(122,138,160,0.3);
+      border-radius: 12px;
+      padding: 14px;
+      color: var(--text-dim);
+      font-size: 14px;
+      font-family: 'Noto Sans JP', sans-serif;
+      cursor: pointer;
+    }
+
+    .btn-change-num-result {
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 10px;
+      color: rgba(122,138,160,0.5);
+      font-size: 12px;
+      font-family: 'Noto Sans JP', sans-serif;
+      cursor: pointer;
+    }
+
+    /* === LOADING === */
+    #loading {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      transition: opacity 0.5s;
+    }
+
+    #loading.hide { opacity: 0; pointer-events: none; }
+
+    .loading-logo { font-size: 48px; margin-bottom: 16px; }
+    .loading-text { font-size: 14px; color: var(--text-dim); }
+    .loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(0,212,255,0.2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 16px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <!-- LOADING -->
+  <div id="loading">
+    <div class="loading-logo">🏥</div>
+    <div class="loading-spinner"></div>
+    <div class="loading-text">院内案内システムを起動中...</div>
+  </div>
+
+  <!-- ==========================================
+       SCREEN 1: 受診番号入力
+  ========================================== -->
+  <div class="screen" id="screenLogin">
+    <div class="login-logo">🏥</div>
+    <div class="login-title">人間ドックご案内</div>
+    <div class="login-sub">受診番号を入力してください</div>
+
+    <div class="login-card">
+      <div class="input-label">受診番号 PATIENT NUMBER</div>
+      <input
+        type="number"
+        class="num-input"
+        id="patientNumInput"
+        placeholder="1001"
+        inputmode="numeric"
+        maxlength="6"
+      >
+      <button class="btn-start" onclick="handleLogin()">案内を開始する</button>
+      <div class="error-msg" id="loginError"></div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       SCREEN 2: 次案内先表示
+  ========================================== -->
+  <div class="screen hidden" id="screenGuide">
+    <div class="guide-header">
+      <div class="guide-patient-num" id="guidePatientNum">---</div>
+      <div class="guide-patient-name" id="guidePatientName">---</div>
+      <div class="guide-greeting">こんにちは。次のご案内先はこちらです。</div>
+    </div>
+
+    <div class="dest-card">
+      <div class="dest-label">次のご案内先</div>
+      <span class="dest-icon" id="guideDestIcon">📍</span>
+      <div class="dest-name" id="guideDestName">---</div>
+      <div class="dest-hint">分岐点のマーカーをスキャンしてください</div>
+    </div>
+
+    <div class="ar-prompt">
+      <div class="ar-prompt-icon">📷</div>
+      <div class="ar-prompt-text">案内マーカーをカメラで読み取る</div>
+      <div class="ar-prompt-sub">廊下・分岐点にあるQRマーカーにかざしてください</div>
+    </div>
+
+    <button class="btn-start-ar" onclick="showMarkerDemo()">
+      📷 マーカーをスキャンする
+    </button>
+
+    <button class="btn-change-num" onclick="goToLogin()">
+      受診番号を変更する
+    </button>
+  </div>
+
+  <!-- ==========================================
+       SCREEN 3: マーカー選択（デモ用）
+       ※ 実機ARの代替として分岐点マーカーを選択
+  ========================================== -->
+  <div class="screen hidden" id="screenMarkerDemo">
+    <div class="demo-header">
+      <div class="demo-title">📍 現在地のマーカーを選んでください</div>
+      <div class="demo-sub">廊下の分岐点に貼られたマーカーIDを選択してください</div>
+    </div>
+
+    <div class="marker-list" id="markerList"></div>
+
+    <button class="btn-back-to-guide" onclick="showGuide()">
+      ← 案内先に戻る
+    </button>
+  </div>
+
+  <!-- ==========================================
+       SCREEN 4: 案内結果表示
+  ========================================== -->
+  <div class="screen hidden" id="screenResult">
+    <div class="result-header">
+      <div class="result-marker-label">現在地</div>
+      <div class="result-marker-name" id="resultMarkerName">---</div>
+    </div>
+
+    <div class="result-direction-card">
+      <span class="result-arrow" id="resultArrow">↑</span>
+      <div class="result-dest-name" id="resultDestName">---</div>
+      <div class="result-guide-label" id="resultGuideLabel">---</div>
+      <div class="result-direction-word" id="resultDirWord">---</div>
+      <div class="result-floor" id="resultFloor"></div>
+    </div>
+
+    <div class="result-buttons">
+      <button class="btn-rescan-result" onclick="showMarkerDemo()">
+        🔄 別のマーカーをスキャン
+      </button>
+      <button class="btn-to-guide" onclick="showGuide()">
+        ← 案内先を確認する
+      </button>
+      <button class="btn-change-num-result" onclick="goToLogin()">
+        受診番号を変更する
+      </button>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="js/data/patients.js"></script>
+  <script src="js/data/locations.js"></script>
+
+  <script>
+  // ============================================================
+  // State
+  // ============================================================
+  let currentPatient = null;
+
+  const ARROW_MAP = {
+    "straight": "↑",
+    "right":    "→",
+    "left":     "←",
+    "back":     "↓"
+  };
+
+  const DIR_LABEL = {
+    "straight": "まっすぐ",
+    "right":    "右へ",
+    "left":     "左へ",
+    "back":     "後方・戻る"
+  };
+
+  // ============================================================
+  // Screen helpers
+  // ============================================================
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => {
+      s.classList.toggle('hidden', s.id !== id);
+    });
+    // scroll to top
+    document.getElementById(id).scrollTop = 0;
+  }
+
+  function goToLogin() {
+    showScreen('screenLogin');
+    document.getElementById('patientNumInput').value = '';
+    document.getElementById('loginError').textContent = '';
+  }
+
+  // ============================================================
+  // Login
+  // ============================================================
+  function handleLogin() {
+    const num = document.getElementById('patientNumInput').value.trim();
+    const errEl = document.getElementById('loginError');
+
+    if (!num) {
+      errEl.textContent = '受診番号を入力してください';
+      return;
+    }
+
+    initPatientsStore();
+    const patient = getPatientByNumber(num);
+
+    if (!patient) {
+      errEl.textContent = `受診番号 ${num} が見つかりません`;
+      return;
+    }
+
+    currentPatient = patient;
+    errEl.textContent = '';
+    showGuide();
+  }
+
+  // Enter key support
+  document.getElementById('patientNumInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleLogin();
+  });
+
+  // ============================================================
+  // Guide screen
+  // ============================================================
+  function showGuide() {
+    if (!currentPatient) { goToLogin(); return; }
+
+    // 最新データを再取得（管理画面で更新されている可能性）
+    currentPatient = getPatientByNumber(currentPatient.patientNumber);
+
+    const dest = getLocationById(currentPatient.nextDestination);
+
+    document.getElementById('guidePatientNum').textContent =
+      `受診番号：${currentPatient.patientNumber}`;
+    document.getElementById('guidePatientName').textContent =
+      `${currentPatient.name} 様`;
+    document.getElementById('guideDestIcon').textContent = dest.icon;
+    document.getElementById('guideDestName').textContent = dest.name;
+
+    showScreen('screenGuide');
+  }
+
+  // ============================================================
+  // Marker demo screen
+  // ============================================================
+  function showMarkerDemo() {
+    const list = document.getElementById('markerList');
+    const icons = ['🚪', '🛤️', '🔀'];
+    list.innerHTML = MARKER_RULES.map((m, i) => `
+      <div class="marker-card" onclick="handleMarkerSelect('${m.markerId}')">
+        <div class="marker-card-icon">${icons[i] || '📍'}</div>
+        <div class="marker-card-info">
+          <div class="marker-card-id">${m.markerId}</div>
+          <div class="marker-card-name">${m.label}</div>
+        </div>
+        <div class="marker-card-arrow">›</div>
+      </div>
+    `).join('');
+    showScreen('screenMarkerDemo');
+  }
+
+  // ============================================================
+  // Marker selected → show result
+  // ============================================================
+  function handleMarkerSelect(markerId) {
+    if (!currentPatient) { goToLogin(); return; }
+
+    // 最新データ再取得
+    currentPatient = getPatientByNumber(currentPatient.patientNumber);
+    const destination = currentPatient.nextDestination;
+
+    const guide = getGuideForMarkerAndDestination(markerId, destination);
+    const marker = getMarkerRule(markerId);
+    const dest = getLocationById(destination);
+
+    document.getElementById('resultMarkerName').textContent =
+      marker ? marker.label : markerId;
+
+    if (!guide) {
+      // 誘導ルールが未定義の場合
+      document.getElementById('resultArrow').textContent = '❓';
+      document.getElementById('resultDestName').textContent = dest.name;
+      document.getElementById('resultGuideLabel').textContent =
+        'このマーカーの案内が設定されていません';
+      document.getElementById('resultDirWord').textContent = '---';
+      document.getElementById('resultFloor').textContent = '';
+    } else {
+      document.getElementById('resultArrow').textContent =
+        ARROW_MAP[guide.direction] || '↑';
+      document.getElementById('resultDestName').textContent = dest.name;
+      document.getElementById('resultGuideLabel').textContent = guide.label;
+      document.getElementById('resultDirWord').textContent =
+        DIR_LABEL[guide.direction] || guide.direction;
+      document.getElementById('resultFloor').textContent =
+        guide.floor ? `フロア：${guide.floor}` : '';
+    }
+
+    showScreen('screenResult');
+  }
+
+  // ============================================================
+  // Init
+  // ============================================================
+  window.addEventListener('load', () => {
+    initPatientsStore();
+    setTimeout(() => {
+      document.getElementById('loading').classList.add('hide');
+    }, 1200);
+
+    // Auto-refresh patient data every 10s
+    setInterval(() => {
+      if (currentPatient) {
+        const updated = getPatientByNumber(currentPatient.patientNumber);
+        if (updated && updated.nextDestination !== currentPatient.nextDestination) {
+          currentPatient = updated;
+          // 案内先表示中なら再描画
+          const guideScreen = document.getElementById('screenGuide');
+          if (!guideScreen.classList.contains('hidden')) {
+            showGuide();
+          }
+        }
+      }
+    }, 10000);
+  });
+  </script>
+
+</body>
+</html>

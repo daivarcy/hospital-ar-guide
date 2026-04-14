@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>院内案内 管理画面｜スタッフ用</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #0a0f1e;
+      --surface:   #111827;
+      --surface2:  #1a2235;
+      --border:    #1e3a5f;
+      --accent:    #00d4ff;
+      --accent2:   #0066ff;
+      --green:     #00e5a0;
+      --yellow:    #ffd166;
+      --red:       #ff6b6b;
+      --text:      #e8edf5;
+      --text-dim:  #7a8aa0;
+      --radius:    10px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* === HEADER === */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-mark {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .logo-text {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--text);
+    }
+
+    .logo-sub {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-weight: 300;
+      letter-spacing: 0.06em;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      color: var(--text-dim);
+      font-family: 'DM Mono', monospace;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* === MAIN === */
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 32px;
+    }
+
+    /* === STATS BAR === */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-family: 'DM Mono', monospace;
+      font-weight: 500;
+      color: var(--accent);
+    }
+
+    .stat-sub {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    /* === SEARCH + CONTROLS === */
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      align-items: center;
+    }
+
+    .search-wrap {
+      flex: 1;
+      position: relative;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: 16px;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px 12px 42px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: 'DM Mono', monospace;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    .search-input::placeholder { color: var(--text-dim); }
+
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+    }
+
+    .btn-reset {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 12px 20px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-reset:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* === TABLE === */
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      padding: 14px 20px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid rgba(30, 58, 95, 0.5);
+      transition: background 0.15s;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+
+    tbody tr:hover { background: rgba(0, 212, 255, 0.03); }
+
+    td {
+      padding: 16px 20px;
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    .patient-num {
+      font-family: 'DM Mono', monospace;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--accent);
+    }
+
+    .patient-name {
+      font-weight: 500;
+    }
+
+    /* Status pill */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .status-waiting {
+      background: rgba(0, 212, 255, 0.1);
+      color: var(--accent);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+    }
+    .status-waiting .status-dot { background: var(--accent); }
+
+    .status-in-progress {
+      background: rgba(255, 209, 102, 0.1);
+      color: var(--yellow);
+      border: 1px solid rgba(255, 209, 102, 0.3);
+    }
+    .status-in-progress .status-dot { background: var(--yellow); animation: pulse 1s infinite; }
+
+    .status-done {
+      background: rgba(0, 229, 160, 0.1);
+      color: var(--green);
+      border: 1px solid rgba(0, 229, 160, 0.3);
+    }
+    .status-done .status-dot { background: var(--green); }
+
+    /* Destination tag */
+    .dest-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+
+    /* Controls cell */
+    .controls-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dest-select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: 'Noto Sans JP', sans-serif;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+      min-width: 130px;
+    }
+
+    .dest-select:focus { border-color: var(--accent); }
+
+    .btn-save {
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border: none;
+      color: #fff;
+      padding: 8px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: opacity 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    .btn-save:hover { opacity: 0.9; }
+    .btn-save:active { transform: scale(0.97); }
+
+    .btn-save.saved {
+      background: linear-gradient(135deg, #00b878, var(--green));
+    }
+
+    /* === TOAST === */
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      background: var(--surface);
+      border: 1px solid var(--green);
+      color: var(--green);
+      padding: 14px 20px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 500;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 999;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* === EMPTY STATE === */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-dim);
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    /* === AR LINK === */
+    .ar-link-banner {
+      margin-top: 32px;
+      background: linear-gradient(135deg, rgba(0,102,255,0.15), rgba(0,212,255,0.1));
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .ar-link-text h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .ar-link-text p {
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    .btn-ar {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    @media (max-width: 768px) {
+      .stats-bar { grid-template-columns: repeat(2, 1fr); }
+      main { padding: 16px; }
+      header { padding: 0 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-mark">🏥</div>
+      <div>
+        <div class="logo-text">院内案内システム</div>
+        <div class="logo-sub">STAFF MANAGEMENT CONSOLE</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="live-dot"></div>
+      <div class="badge" id="clock">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- STATS -->
+    <div class="stats-bar" id="statsBar">
+      <div class="stat-card">
+        <div class="stat-label">本日の受診者</div>
+        <div class="stat-value" id="statTotal">-</div>
+        <div class="stat-sub">名</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">待機中</div>
+        <div class="stat-value" id="statWaiting">-</div>
+        <div class="stat-sub">名</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">案内中</div>
+        <div class="stat-value" id="statInProgress">-</div>
+        <div class="stat-sub">名</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">完了</div>
+        <div class="stat-value" id="statDone">-</div>
+        <div class="stat-sub">名</div>
+      </div>
+    </div>
+
+    <!-- SEARCH + RESET -->
+    <div class="controls">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input
+          type="text"
+          class="search-input"
+          id="searchInput"
+          placeholder="受診番号または氏名で検索..."
+        >
+      </div>
+      <button class="btn-reset" onclick="resetAllData()">データリセット</button>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>受診番号</th>
+            <th>氏名</th>
+            <th>ステータス</th>
+            <th>次の案内先</th>
+            <th>案内先を変更</th>
+          </tr>
+        </thead>
+        <tbody id="patientTable"></tbody>
+      </table>
+    </div>
+
+    <!-- AR LINK -->
+    <div class="ar-link-banner">
+      <div class="ar-link-text">
+        <h3>📱 受診者向けWebAR画面</h3>
+        <p>iPhoneのSafariでQRコードを読み取り、受診番号を入力してください</p>
+      </div>
+      <a href="index.html" class="btn-ar" target="_blank">AR画面を開く →</a>
+    </div>
+
+  </main>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- SCRIPTS -->
+  <script src="js/data/patients.js"></script>
+  <script src="js/data/locations.js"></script>
+  <script>
+    // ============================================================
+    // Clock
+    // ============================================================
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock').textContent =
+        now.toLocaleTimeString('ja-JP', { hour12: false });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ============================================================
+    // Stats
+    // ============================================================
+    function updateStats(patients) {
+      document.getElementById('statTotal').textContent = patients.length;
+      document.getElementById('statWaiting').textContent =
+        patients.filter(p => p.status === 'waiting').length;
+      document.getElementById('statInProgress').textContent =
+        patients.filter(p => p.status === 'in-progress').length;
+      document.getElementById('statDone').textContent =
+        patients.filter(p => p.status === 'done').length;
+    }
+
+    // ============================================================
+    // Render Table
+    // ============================================================
+    function renderTable(patients) {
+      updateStats(patients);
+
+      const tbody = document.getElementById('patientTable');
+
+      if (patients.length === 0) {
+        tbody.innerHTML = `
+          <tr><td colspan="5">
+            <div class="empty-state">
+              <div class="empty-state-icon">🔍</div>
+              <div>該当する受診者が見つかりません</div>
+            </div>
+          </td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = patients.map(p => {
+        const dest = getLocationById(p.nextDestination);
+        const statusClass = {
+          'waiting':     'status-waiting',
+          'in-progress': 'status-in-progress',
+          'done':        'status-done'
+        }[p.status] || 'status-waiting';
+        const statusLabel = STATUS_LABELS[p.status] || p.status;
+
+        const options = LOCATIONS.map(l =>
+          `<option value="${l.id}" ${l.id === p.nextDestination ? 'selected' : ''}>
+            ${l.icon} ${l.name}
+          </option>`
+        ).join('');
+
+        return `
+          <tr>
+            <td><span class="patient-num">${p.patientNumber}</span></td>
+            <td><span class="patient-name">${p.name}</span></td>
+            <td>
+              <span class="status-pill ${statusClass}">
+                <span class="status-dot"></span>
+                ${statusLabel}
+              </span>
+            </td>
+            <td>
+              <span class="dest-tag">${dest.icon} ${dest.name}</span>
+            </td>
+            <td>
+              <div class="controls-cell">
+                <select class="dest-select" id="sel-${p.patientNumber}">
+                  ${options}
+                </select>
+                <button
+                  class="btn-save"
+                  id="btn-${p.patientNumber}"
+                  onclick="saveDestination('${p.patientNumber}')"
+                >
+                  保存
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // ============================================================
+    // Save Destination
+    // ============================================================
+    function saveDestination(patientNumber) {
+      const sel = document.getElementById(`sel-${patientNumber}`);
+      const btn = document.getElementById(`btn-${patientNumber}`);
+      const newDest = sel.value;
+
+      updatePatientDestination(patientNumber, newDest);
+      const destName = getLocationById(newDest).name;
+
+      // Button feedback
+      btn.textContent = '✓ 保存済み';
+      btn.classList.add('saved');
+      setTimeout(() => {
+        btn.textContent = '保存';
+        btn.classList.remove('saved');
+      }, 2000);
+
+      showToast(`${patientNumber} の案内先を「${destName}」に変更しました`);
+      refreshTable();
+    }
+
+    // ============================================================
+    // Search
+    // ============================================================
+    let searchQuery = '';
+
+    document.getElementById('searchInput').addEventListener('input', e => {
+      searchQuery = e.target.value.trim().toLowerCase();
+      refreshTable();
+    });
+
+    function refreshTable() {
+      let patients = getAllPatients();
+      if (searchQuery) {
+        patients = patients.filter(p =>
+          p.patientNumber.includes(searchQuery) ||
+          p.name.toLowerCase().includes(searchQuery)
+        );
+      }
+      renderTable(patients);
+    }
+
+    // ============================================================
+    // Reset
+    // ============================================================
+    function resetAllData() {
+      if (!confirm('ダミーデータにリセットしますか？')) return;
+      localStorage.removeItem('hospital_patients');
+      refreshTable();
+      showToast('データをリセットしました');
+    }
+
+    // ============================================================
+    // Toast
+    // ============================================================
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = '✓ ' + msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // ============================================================
+    // INIT
+    // ============================================================
+    initPatientsStore();
+    refreshTable();
+
+    // Auto-refresh every 5s (本番はWebSocketに差し替え)
+    setInterval(refreshTable, 5000);
+  </script>
+
+</body>
+</html>
